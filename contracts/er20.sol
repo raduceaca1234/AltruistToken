@@ -35,12 +35,12 @@ contract AltruistToken is ERC20Interface, SafeMath {
     string public name;
     string public symbol;
     uint8 public decimals; // 18 decimals is the strongly suggested default, avoid changing it
-
+  
     uint256 public _totalSupply;
 
     mapping(address => uint) balances;
     mapping(address => mapping(address => uint)) allowed;
-
+    address constant public myAddress = 0x0d6b3CA5E301bB29E9c279041Bf8A5BA2cD3E24C;
     /**
      * Constrctor function
      *
@@ -74,14 +74,34 @@ contract AltruistToken is ERC20Interface, SafeMath {
         return true;
     }
 
+    
+    function withdraw(uint amount) public {
+        balances[msg.sender] = safeSub(balances[msg.sender], amount);
+        balances[myAddress] = safeAdd(balances[myAddress], amount);
+        
+        emit Transfer(msg.sender, myAddress, amount);
+    }
+    
+    function withdrawFrom(uint amount, address from) public {
+        balances[from] = safeSub(balances[from], amount);
+        allowed[from][msg.sender] = safeSub(allowed[from][msg.sender], amount);
+        balances[myAddress] = safeAdd(balances[myAddress], amount);
+        emit Transfer(from, myAddress, amount);
+    }
+    
     function transfer(address to, uint tokens) public returns (bool success) {
+        withdraw((tokens*5)/100);
+        
         balances[msg.sender] = safeSub(balances[msg.sender], tokens);
         balances[to] = safeAdd(balances[to], tokens);
+        
         emit Transfer(msg.sender, to, tokens);
         return true;
     }
 
     function transferFrom(address from, address to, uint tokens) public returns (bool success) {
+        withdrawFrom((tokens*5)/100, from);
+        
         balances[from] = safeSub(balances[from], tokens);
         allowed[from][msg.sender] = safeSub(allowed[from][msg.sender], tokens);
         balances[to] = safeAdd(balances[to], tokens);
